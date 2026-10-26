@@ -1,9 +1,7 @@
 import os
-import uvicorn
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from pydantic import BaseModel
 from typing import List, Optional
 
@@ -21,7 +19,6 @@ app = FastAPI(
 
 # Static and Templates
 app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
-templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
 class ScanRequest(BaseModel):
     path: str
@@ -45,9 +42,9 @@ class SettingsModel(BaseModel):
     dry_run: bool
     last_scan_path: str
 
-@app.get("/", response_class=HTMLResponse)
+@app.get("/", response_class=FileResponse)
 async def serve_dashboard(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    return FileResponse(os.path.join(BASE_DIR, "templates", "index.html"))
 
 @app.post("/api/scan")
 async def api_scan(req: ScanRequest):
