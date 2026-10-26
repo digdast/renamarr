@@ -8,7 +8,32 @@ let activeEditItemId = null;
 document.addEventListener("DOMContentLoaded", () => {
   checkUndoStatus();
   loadSettings();
+  loadNetworkInfo();
 });
+
+async function loadNetworkInfo() {
+  try {
+    const res = await fetch("/api/system/network");
+    const data = await res.json();
+    if (data.remote_urls && data.remote_urls.length > 0) {
+      const primaryUrl = data.remote_urls.find(u => !u.includes("127.0.0.1") && !u.includes("169.254")) || data.remote_urls[0];
+      const badge = document.getElementById("remoteBadge");
+      const urlText = document.getElementById("remoteUrlText");
+      if (badge && urlText) {
+        urlText.innerText = primaryUrl;
+        badge.style.display = "inline-flex";
+        badge.title = "Click to copy remote access URL";
+        badge.style.cursor = "pointer";
+        badge.onclick = () => {
+          navigator.clipboard.writeText(primaryUrl);
+          showToast(`Copied ${primaryUrl} to clipboard!`);
+        };
+      }
+    }
+  } catch (e) {
+    console.warn("Could not fetch network info:", e);
+  }
+}
 
 // Toast Notifications
 function showToast(message, type = "info") {

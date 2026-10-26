@@ -81,7 +81,15 @@ pip install -r requirements.txt
 
 ---
 
-### Option C: Docker & Docker Compose
+### Option C: Remote Linux Host / Proxmox LXC / unRAID (1-Command Install)
+Run this single command on any remote Debian/Ubuntu/Proxmox node to automatically install, configure, and launch Renamarr as a background `systemd` service:
+```bash
+curl -sSL https://raw.githubusercontent.com/digdast/renamarr/main/install_remote.sh | sudo bash
+```
+
+---
+
+### Option D: Docker & Docker Compose
 ```yaml
 name: renamarr
 
@@ -104,6 +112,35 @@ services:
 Launch with:
 ```bash
 docker compose up -d
+```
+
+---
+
+## 🌐 Running From a Remote Host
+
+Renamarr is fully architected for remote network environments and can be operated from any machine:
+
+### 1. Web Access from Any Device on the Network
+Renamarr binds to `0.0.0.0:7879`. Simply open your browser on any phone, tablet, or remote PC on your LAN:
+```
+http://<HOST_IP>:7879   (e.g., http://192.168.0.25:7879)
+```
+
+### 2. Remote Headless CLI & Automation Client (`renamarr_cli.py`)
+Run renames from any remote terminal, SSH session, or post-download script (qBittorrent, Transmission, SABnzbd):
+
+```bash
+# Check remote server connectivity
+python renamarr_cli.py --remote http://192.168.0.25:7879 status
+
+# Remotely scan a network share
+python renamarr_cli.py --remote http://192.168.0.25:7879 scan --path "\\192.168.0.3\data\media"
+
+# Remotely execute batch rename (with -y to auto-confirm)
+python renamarr_cli.py --remote http://192.168.0.25:7879 rename --path "\\192.168.0.3\data\media" -y
+
+# 1-Click Rollback / Undo latest batch
+python renamarr_cli.py --remote http://192.168.0.25:7879 undo
 ```
 
 ---

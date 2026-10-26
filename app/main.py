@@ -1,7 +1,9 @@
 import os
+import socket
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 
@@ -17,8 +19,39 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# Enable CORS for remote hosts, mobile browsers, and reverse proxies
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Static and Templates
 app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
+
+@app.get("/api/system/network")
+async def get_network_info():
+    ips = []
+    hostname = socket.gethostname()
+    try:
+        # Get all local IP addresses
+        addr_info = socket.getaddrinfo(hostname, None)
+        for item in addr_info:
+            ip = item[4][0]
+            if ":" not in ip and not ip.startswith("127.") and ip not in ips:
+                ips.append(ip)
+    except:
+        pass
+    if not ips:
+        ips.append("127.0.0.1")
+    return {
+        "hostname": hostname,
+        "port": 7879,
+        "ips": ips,
+        "remote_urls": [f"http://{ip}:7879" for ip in ips]
+    }
 
 class ScanRequest(BaseModel):
     path: str

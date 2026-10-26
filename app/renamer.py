@@ -241,12 +241,19 @@ def undo_latest_batch():
 
 def get_filesystem_drives_and_dirs(current_dir=None):
     if not current_dir or current_dir == "ROOT":
-        # List Windows drives
         drives = []
-        for letter in string.ascii_uppercase:
-            d = f"{letter}:\\"
-            if os.path.exists(d):
-                drives.append({"name": f"Drive ({letter}:)", "path": d, "is_drive": True})
+        if os.name == 'nt':
+            # List Windows drives
+            for letter in string.ascii_uppercase:
+                d = f"{letter}:\\"
+                if os.path.exists(d):
+                    drives.append({"name": f"Drive ({letter}:)", "path": d, "is_drive": True})
+        else:
+            # Linux / Unix / Container roots
+            drives.append({"name": "Root (/)", "path": "/", "is_drive": True})
+            for common in ["/media", "/mnt", "/data", "/mnt/user/data", "/mnt/user/data/media"]:
+                if os.path.exists(common):
+                    drives.append({"name": f"Mount ({common})", "path": common, "is_drive": True})
         return {"current": "ROOT", "parent": None, "directories": drives}
 
     norm = os.path.abspath(current_dir)
