@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Renamarr — Next-Gen Interactive Media Renamer & Organizer</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%20width=%22100%22%20height=%22100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+</head>
+<body>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <div class="app-container">
+    
+    <!-- Top Header -->
+    <header class="app-header">
+      <div class="brand-wrapper">
+        <div class="brand-icon">⚡</div>
+        <div class="brand-info">
+          <h1>Renamarr</h1>
+          <p>Next-Gen Interactive Media Renamer & Organizer for Plex, Jellyfin & Emby</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-secondary" id="btnUndo" style="display: none;" onclick="undoLastBatch()">
+          <span>↺</span> Undo Last Batch
+        </button>
+        <button class="btn btn-secondary" onclick="openSettingsModal()">
+          <span>⚙</span> Settings
+        </button>
+        <a href="https://github.com/digdast" target="_blank" class="btn btn-secondary">
+          <span>★</span> GitHub
+        </a>
+      </div>
+    </header>
+
+    <!-- Scan & Control Panel -->
+    <section class="control-panel">
+      <div class="path-input-group">
+        <div class="input-with-icon">
+          <span class="input-icon">📂</span>
+          <input type="text" id="targetPath" placeholder="Enter local path (C:\Media) or network share (\\192.168.0.3\data\media)..." value="C:\Media">
+        </div>
+        <button class="btn btn-secondary" onclick="openFolderBrowser()">
+          <span>📁</span> Browse
+        </button>
+        <button class="btn btn-primary" id="btnScan" onclick="startScan()">
+          <span id="scanIcon">⚡</span> <span id="scanBtnText">Scan & Match with IMDb</span>
+        </button>
+      </div>
+
+      <!-- Quick Share Presets -->
+      <div class="presets-bar">
+        <span>Quick Presets:</span>
+        <span class="preset-chip" onclick="setPreset('C:\\Media\\Movies')">C:\Media\Movies</span>
+        <span class="preset-chip" onclick="setPreset('C:\\Media\\TV')">C:\Media\TV</span>
+        <span class="preset-chip" onclick="setPreset('\\\\192.168.0.3\\data\\media')">\\192.168.0.3\data\media</span>
+        <span class="preset-chip" onclick="setPreset('Z:\\Movies')">Z:\Movies</span>
+      </div>
+
+      <!-- Options Row -->
+      <div class="options-row">
+        <label class="checkbox-label">
+          <input type="checkbox" id="chkRecursive" checked>
+          <span>Recursive Subdirectories</span>
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" id="chkOrganize" checked>
+          <span>Organize into Plex/Jellyfin Folders</span>
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" id="chkDryRun">
+          <span>Dry-Run Mode (Simulate without renaming)</span>
+        </label>
+      </div>
+    </section>
+
+    <!-- Stats Ribbon -->
+    <section class="stats-ribbon" id="statsRibbon" style="display: none;">
+      <div class="stat-card">
+        <div class="stat-icon blue">🎬</div>
+        <div>
+          <div class="stat-value" id="statTotal">0</div>
+          <div class="stat-label">Total Files Found</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon purple">📺</div>
+        <div>
+          <div class="stat-value" id="statTV">0</div>
+          <div class="stat-label">TV Episodes</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon blue">🍿</div>
+        <div>
+          <div class="stat-value" id="statMovies">0</div>
+          <div class="stat-label">Movies</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon emerald">✓</div>
+        <div>
+          <div class="stat-value" id="statReady">0</div>
+          <div class="stat-label">Ready to Rename</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon amber">ℹ</div>
+        <div>
+          <div class="stat-value" id="statAlready">0</div>
+          <div class="stat-label">Already Compliant</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Results Section -->
+    <section class="results-container" id="resultsContainer" style="display: none;">
+      <div class="results-header">
+        <div class="table-controls">
+          <label class="checkbox-label">
+            <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this.checked)">
+            <span>Select All</span>
+          </label>
+          <button class="btn btn-secondary btn-sm" onclick="invertSelection()">Invert</button>
+          <input type="text" class="filter-input" id="tableFilter" placeholder="Filter by title, year, codec..." oninput="filterTable()">
+        </div>
+        <div style="font-size: 13.5px; color: var(--text-muted);">
+          Click any green target name to manually edit
+        </div>
+      </div>
+
+      <!-- Diff Table -->
+      <div class="diff-table-wrapper">
+        <table class="diff-table">
+          <thead>
+            <tr>
+              <th width="40"></th>
+              <th width="65">Poster</th>
+              <th width="110">Type</th>
+              <th width="35%">Original Source & File</th>
+              <th width="40" style="text-align: center;">➔</th>
+              <th width="45%">Proposed Plex/Jellyfin Target</th>
+              <th width="80">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="diffTableBody">
+            <!-- Dynamically populated via app.js -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Bottom Floating Action Bar -->
+  <div class="bottom-bar" id="bottomBar" style="display: none;">
+    <div class="bottom-info">
+      <span class="selection-pill" id="selectedCountPill">0 selected</span>
+      <span style="color: var(--text-muted);">Ready to apply renaming batch</span>
+    </div>
+    <div style="display: flex; gap: 12px;">
+      <button class="btn btn-secondary" onclick="executeBatch(true)">Dry-Run Test</button>
+      <button class="btn btn-emerald" id="btnApplyRenames" onclick="executeBatch(false)">
+        <span>✓</span> Apply Renames
+      </button>
+    </div>
+  </div>
+
+  <!-- Folder Browser Modal -->
+  <div class="modal-overlay" id="folderModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>📁 Browse Directory / Network Share</h3>
+        <button class="modal-close" onclick="closeFolderModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="browser-path-display" id="browserCurrentPath">ROOT</div>
+        <div class="browser-item-list" id="browserList">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeFolderModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="selectBrowserPath()">Select This Folder</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manual IMDb Match / Search Override Modal -->
+  <div class="modal-overlay" id="imdbModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>🔍 Search Alternative IMDb Match</h3>
+        <button class="modal-close" onclick="closeImdbModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+          <input type="text" id="imdbSearchQuery" class="filter-input" style="flex: 1;" placeholder="Enter exact title (e.g. Inception)...">
+          <button class="btn btn-primary" onclick="executeManualImdbSearch()">Search</button>
+        </div>
+        <div class="browser-item-list" id="imdbSearchResults">
+          <!-- Results populated dynamically -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeImdbModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>⚙️ Naming Templates & Settings</h3>
+        <button class="modal-close" onclick="closeSettingsModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; font-size: 13.5px; font-weight: 600; margin-bottom: 6px;">Movie Naming Template</label>
+          <input type="text" id="settingMovieTemplate" class="filter-input" style="width: 100%; font-family: var(--font-mono);" value="{title} ({year}) [{resolution}]">
+          <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Tokens: {title}, {year}, {resolution}, {codec}</p>
+        </div>
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; font-size: 13.5px; font-weight: 600; margin-bottom: 6px;">TV Show Naming Template</label>
+          <input type="text" id="settingTvTemplate" class="filter-input" style="width: 100%; font-family: var(--font-mono);" value="{show} - S{season:02d}E{episode:02d} - {title} [{resolution}]">
+          <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Tokens: {show}, {season}, {episode}, {title}, {resolution}, {codec}</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeSettingsModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

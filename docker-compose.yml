@@ -1,0 +1,17 @@
+name: renamarr
+
+services:
+  renamarr:
+    build: .
+    container_name: renamarr
+    restart: unless-stopped
+    ports:
+      - "7879:7879"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
+    volumes:
+      - ./data:/app/data
+      # Mount your local or network media shares here:
+      - /mnt/user/data/media:/media:rw
